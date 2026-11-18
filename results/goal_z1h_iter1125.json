@@ -1,0 +1,22 @@
+{
+ "t": "2026-11-18 20:04:20",
+ "label": "z1h iteration 1125",
+ "note": "",
+ "policy": "runs/z1h/net_1125.npy",
+ "n": 1000,
+ "score": 0.74,
+ "ci": [
+  0.7119,
+  0.7662
+ ],
+ "big_money": 0.93,
+ "smithy_bm": 0.78,
+ "witch_bm": 0.73,
+ "secs": 8,
+ "vs_rl": 0.4005,
+ "vs_rl_ci": [
+  0.3706,
+  0.4312
+ ],
+ "vs_rl_n": 1000
+}

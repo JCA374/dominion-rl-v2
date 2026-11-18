@@ -1,8 +1,8 @@
 [
  {
-  "label": "rl-v2 (iteration 1000)",
-  "name": "rl-v2 (iteration 1000)",
-  "file": "z1_net_1000.npy",
+  "label": "rl-v2 (iteration 1100)",
+  "name": "rl-v2 (iteration 1100)",
+  "file": "z1h_net_1100.npy",
   "note": "The newest self-play network: learned everything from games, starting from nothing."
  },
  {
