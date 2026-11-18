@@ -56,3 +56,4 @@
 {"t": "2026-11-18T16:54:45", "kind": "goal_best", "iter": 897, "check": {"score": 0.7338, "n": 400}, "champion": "runs/z1/net_897.npy", "eval": "GA 0.734 BM 0.915 Smithy 0.760 Witch 0.715 bots 0.797"}
 {"t": "2026-11-18T16:57:22", "kind": "run_resume", "iter": 901, "stage": "league"}
 {"t": "2026-11-18T17:24:43", "kind": "goal_best", "iter": 923, "check": {"score": 0.735, "n": 400}, "champion": "runs/z1k/net_923.npy", "eval": "GA 0.735 BM 0.925 Smithy 0.815 Witch 0.720 bots 0.820"}
+{"t": "2026-11-18T18:03:39", "kind": "goal_best", "iter": 957, "check": {"score": 0.7488, "n": 400}, "champion": "runs/z1k/net_957.npy", "eval": "GA 0.749 BM 0.910 Smithy 0.785 Witch 0.770 bots 0.822"}
