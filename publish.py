@@ -297,7 +297,8 @@ def strip(runs, goals):
     G = CFG.get('goal', {})
     metric, target = G.get('metric', 'landed'), G.get('target')
     fmt = lambda v: (f'{100 * v:.1f}%' if isinstance(v, (int, float)) and v <= 1 else str(v)) if v is not None else None
-    main = next((r for r in runs if r['alive']), runs[-1] if runs else None)
+    main = next((r for r in runs if r['run'] == CFG.get('main_run')), None) or \
+           next((r for r in runs if r['alive']), runs[-1] if runs else None)   # site.json main_run: the run to show
     out = {'alive': bool(main and main['alive']), 'run': main['run'] if main else None,
            'stage': (main or {}).get('last', {}).get('stage'), 'goal_text': fmt(target),
            'stages_text': f"{len(main['passed'])} of {main['n_stages'] or '?'} stages passed" if main else '',

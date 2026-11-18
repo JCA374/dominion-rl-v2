@@ -130,8 +130,9 @@ pre { background: var(--code); padding: 10px 12px; border-radius: 8px; overflow-
 }
 
 /* favorites (Overview: what it plays right now) */
-.favgrid { display: grid; grid-template-columns: 3fr 2fr; gap: 24px; }
-@media (max-width: 760px) { .favgrid { grid-template-columns: 1fr; } }
+.favgrid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 24px; }
+.favgrid > div { min-width: 0; }
+@media (max-width: 760px) { .favgrid { grid-template-columns: minmax(0, 1fr); } }
 table.fav td.favcell { position: relative; min-width: 110px; }
 table.fav .favbar { position: absolute; left: 4px; top: 25%; height: 50%; background: var(--accent); opacity: .25; border-radius: 3px; max-width: calc(100% - 8px); }
 table.fav .favbar.base { background: var(--good); }
