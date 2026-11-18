@@ -8,6 +8,10 @@
   "label": "Score vs GA base",
   "columns": [
    [
+    "vs_rl",
+    "vs rl-v1 (head to head)"
+   ],
+   [
     "vs_az",
     "vs az-v1 best (head to head)"
    ],
@@ -25,7 +29,7 @@
    ]
   ]
  },
- "goal_text": "learn from nothing, by self-play first, and end up better than rl-v1 (which started by imitating the GA genome): above its 82.8% on az-v1's 1,000 goal games against the GA base genome",
+ "goal_text": "learn from nothing, by self-play first, and end up better than rl-v1 (which started by imitating the GA genome): above 50% head to head against rl-v1 (r2, iteration 2,200) on 1,000 fresh games, and above its 82.8% on az-v1's goal games against the GA base genome",
  "names": {},
  "chart": {
   "x": "iter",

@@ -24,6 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import numpy as np  # noqa: E402
 
 AZ_BEST = {"kind": "az", "path": "opponents/az_r2_357.npy", "sims": 400}
+RL_V1 = {"kind": "net", "path": "opponents/rl_r2_2200.npy"}      # rl-v1's r2 at iteration 2,200: the target
 BOTS = ["Big Money", "Smithy-BM", "Witch-BM"]
 
 
@@ -47,6 +48,7 @@ def main():
     ap.add_argument("--note", default="")
     ap.add_argument("--nh", type=int, default=256)
     ap.add_argument("--vs_az", action="store_true")
+    ap.add_argument("--no_vs_rl", action="store_true", help="skip the 1,000 head-to-head games against rl-v1")
     ap.add_argument("--baseline", action="store_true")
     ap.add_argument("--bake", action="store_true")
     args = ap.parse_args()
@@ -68,6 +70,11 @@ def main():
         for _ in range(500):
             k, s = random_kingdom(r2), r2.getrandbits(32)
             games += [{"kingdom": k, "seed": s, "seat": seat, "opp": dict(AZ_BEST, tag="AZ best")} for seat in (0, 1)]
+    if not args.no_vs_rl:
+        r3 = random.Random("rl-v2 vs rl-v1")
+        for _ in range(500):
+            k, s = random_kingdom(r3), r3.getrandbits(32)
+            games += [{"kingdom": k, "seed": s, "seat": seat, "opp": dict(RL_V1, tag="rl-v1")} for seat in (0, 1)]
     slow = [g for g in games if g["opp"]["kind"] == "az"] if args.agent != "az" else games
     fast = [g for g in games if g not in slow]
     jobs = [{"games": slow[i:i + 4], "agent": agent, "nh": args.nh} for i in range(0, len(slow), 4)] + \
@@ -86,6 +93,9 @@ def main():
     if "AZ best" in by:
         a = float(np.mean(by["AZ best"]))
         out.update(vs_az=round(a, 4), vs_az_ci=wilson(a, len(by["AZ best"])), vs_az_n=len(by["AZ best"]))
+    if "rl-v1" in by:
+        a = float(np.mean(by["rl-v1"]))
+        out.update(vs_rl=round(a, 4), vs_rl_ci=wilson(a, len(by["rl-v1"])), vs_rl_n=len(by["rl-v1"]))
     os.makedirs("results", exist_ok=True)
     kind = "baseline" if args.baseline else "bake" if args.bake else "goal"
     path = f"results/{kind}_{args.name}.json"

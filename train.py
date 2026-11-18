@@ -258,6 +258,8 @@ def main():
         net.load_state_dict(ck["net"])
         opt = torch.optim.Adam(net.parameters(), lr=cfg["lr"])
         opt.load_state_dict(ck["opt"])
+        for g in opt.param_groups:                 # the config's learning rate wins over the saved one
+            g["lr"] = cfg["lr"]
         it, snaps = ck["iter"] + 1, ck["snaps"]
         stage, stage_start = ck.get("stage", 0), ck.get("stage_start", 1)
         log.event("run_resume", iter=it, stage=STAGES[stage]["name"])

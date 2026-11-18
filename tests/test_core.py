@@ -62,3 +62,19 @@ def test_net_seat_plays_legal_games_and_records():
         assert len(rec["A"]) > 0 and (rec["SEAT"] == 0).all()
         assert rec["LEGAL"][np.arange(len(rec["A"])), rec["A"]].all()
         assert (rec["LOGP"] <= 0).all()
+
+
+def test_mixed_sizes():
+    """A 512-unit learner against a 256-unit opponent: each seat's size comes from its weights."""
+    import random
+    from rl.core import NET, Seat, base_genome, nh_of, play, random_kingdom
+    from rl.net import Net
+    big = Net(512).flat()
+    small = Net(256).flat()
+    assert nh_of(big) == 512 and nh_of(small) == 256
+    rng = random.Random(3)
+    for i in range(5):
+        k = random_kingdom(rng)
+        g = base_genome(k)["ints"]
+        r = play([Seat(NET, g, big, sample=True, record=True), Seat(NET, g, small)], k, i)
+        assert not r["error"] and len(r["rec"]["A"]) > 0

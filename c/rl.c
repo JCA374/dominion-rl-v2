@@ -134,10 +134,10 @@ static int rl_decide(void *ctx, const de_game *g, int kind, int me, int subject,
 }
 
 /* One game. Per seat i: mode[i], genome[i] (RL_GA; also the AZ agent's non-buy play), prm[i]
- * (RL_NET weights, nh; or az-v1 net weights, nh 128, for RL_AZ), sample/record/temp (RL_NET),
+ * (RL_NET weights with nh[i] hidden units; or az-v1 net weights, nh 128, for RL_AZ), sample/record/temp (RL_NET),
  * az_sims (RL_AZ: 0 = its net's argmax, else IS-MCTS with this many simulations, leaf lam 0.5).
  * out: [winners mask, score0, score1, turns0, turns1, capped|error<<1]. Returns records written. */
-int rl_play(const int *mode, const float *prm0, const float *prm1, int nh,
+int rl_play(const int *mode, const float *prm0, const float *prm1, const int *nh,
             const int *genome0, const int *genome1, const int *sample, const int *record,
             float temp, const int *az_sims, float az_lam, const int *kingdom, int kn,
             uint64_t seed, uint64_t rng_seed,
@@ -151,7 +151,7 @@ int rl_play(const int *mode, const float *prm0, const float *prm1, int nh,
     rl_seat st[2];
     for (int i = 0; i < 2; i++) {
         memset(&st[i], 0, sizeof st[i]);
-        st[i] = (rl_seat){mode[i], genome[i], prm[i], nh, sample[i], record[i], temp > 0 ? temp : 1,
+        st[i] = (rl_seat){mode[i], genome[i], prm[i], nh[i], sample[i], record[i], temp > 0 ? temp : 1,
                           {0}, de_rng_next(&r) | 1, 0};
         if (mode[i] == RL_AZ)
             st[i].az = (az_agent){az_sims[i] ? AZ_SEARCH : AZ_NET, {prm[i], 128}, genome[i], az_sims[i], 0, 0,
