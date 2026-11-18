@@ -17,7 +17,8 @@ import numpy as np
 from rl import core
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-RUN = "z1"
+RUN = "z1h"                    # the main run (caches live in runs/RUN)
+LINEAGE = ["z1", "z1h"]         # z1h is z1 forked at iteration 1,095 onto the helper inputs
 EVERY = 25                     # the Play tab's newest net moves every EVERY iterations (clips are committed)
 N = core.NUM_CARDS
 NAME = core.NAME
@@ -27,9 +28,14 @@ AZH = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(AZH)          # az-v1's frame(), encode_mp4(), GAMES and the model-tab figure helpers
 
 
-def _nets(run=RUN):
-    nets = glob.glob(os.path.join(ROOT, "runs", run, "net_*.npy"))
-    return sorted((os.path.relpath(p, ROOT) for p in nets), key=lambda p: int(p.split("_")[-1][:-4]))
+def _nets(runs=None):
+    """The main lineage's nets, oldest first: z1 up to the fork, then z1h (z1 + the helper inputs). Where both
+    have an iteration, the later run's net is taken."""
+    by_it = {}
+    for run in runs or LINEAGE:
+        for p in glob.glob(os.path.join(ROOT, "runs", run, "net_*.npy")):
+            by_it[int(p.split("_")[-1][:-4])] = os.path.relpath(p, ROOT)
+    return [by_it[i] for i in sorted(by_it)]
 
 
 def models():
@@ -461,7 +467,7 @@ def playvs_files(docs_dir):
         pick.append(("rl-v2, iteration 0 (random)", its[0], "Random weights: every legal choice about equally likely. Very easy."))
     models, keep = [], set()
     for label, path, note in pick:
-        f = os.path.basename(path) if path.startswith("opponents") else f"{RUN}_{os.path.basename(path)}"
+        f = os.path.basename(path) if path.startswith("opponents") else f"{path.split(os.sep)[1]}_{os.path.basename(path)}"
         dst = os.path.join(out, "models", f)
         if not os.path.exists(dst) or os.path.getmtime(dst) < os.path.getmtime(os.path.join(ROOT, path)):
             shutil.copyfile(os.path.join(ROOT, path), dst)

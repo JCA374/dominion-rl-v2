@@ -9,7 +9,7 @@
 <body>
 <main>
 <h1>How it sees</h1>
-<p class="lede">Every time the engine asks the network a question, the network gets 298 numbers: what this player knows at that
+<p class="lede">Every time the engine asks the network a question, the network gets 298 numbers (413 with the helper inputs below): what this player knows at that
 moment, plus what is being asked. It answers with 34 numbers: a score for each card (or Sentry option) and one for
 "pass"; only the legal answers count.</p>
 <section>
@@ -30,6 +30,30 @@ moment, plus what is being asked. It answers with 34 numbers: a score for each c
 <p>The first 175 are az-v1's features exactly (<code>az_features</code> in <code>az-v1/c/az.c</code>); the rest are new,
 because this network also plays the action phase, where the hand matters.</p>
 </section>
+<section>
+<h2>Helper inputs (from iteration 1,095, run z1h): 115 more</h2>
+<p>Numbers a good player works out in their head, computed exactly from what the player knows, so the network does
+not have to learn the arithmetic. <b>The next hand</b> is the first 5 cards of the draw pile (its contents are known,
+not its order); if fewer than 5 are left, the rest come from everything else reshuffled (discard, hand, in play).
+During the opponent's turn the next hand is the hand it holds now. The odds are exact (hypergeometric), not
+simulated.</p>
+<div class="tablewrap"><table class="t">
+<tr><th>Inputs</th><th>How many</th><th>What</th></tr>
+<tr><td>next hand</td><td>9</td><td>expected coins; chance of at least $3, $5, $6, $8; expected action cards, +Actions, +Buys, +Cards</td></tr>
+<tr><td>next turn's VP</td><td>2</td><td>expected VP gain (the best Victory card the next hand can afford: Province at $8, Duchy at $5, Estate at $2, if
+there are any left) and the VP after it</td></tr>
+<tr><td>the whole deck</td><td>5</td><td>coins, action cards, +Actions, +Buys and +Cards per 5 cards (an average hand)</td></tr>
+<tr><td>if I gain this card</td><td>3 × 33</td><td>for every card in the game: how one more copy changes coins, +Actions and +Buys per 5 cards</td></tr>
+</table></div>
+<p><b>Example</b> (turn 1, hand Copper ×3 + Estate ×2): the draw pile holds 4 Coppers and an Estate, so the next hand
+is exactly that: expected coins 4.0, chance of $3+ 100%, of $5+ 0%; the best VP buy at $4 is an Estate (+1 VP).
+Gaining a Gold would add +1.05 coins per 5 cards, a Silver +0.59, a Province −0.32 (it dilutes the deck).</p>
+<p><b>How they were added.</b> z1 was copied at iteration 1,095 with zero weights on the new inputs (so at first it
+played exactly as before, checked on 20 games) and trained on as z1h. Older networks (rl-v1, past snapshots) read
+only the first 298 inputs. <code>tests/test_play_parity.py</code> checks that the browser's Python version computes
+the same numbers as the C engine.</p>
+</section>
+
 <section>
 <h2>What it does not see</h2>
 <p>The order of its own draw pile, the opponent's hand, the opponent's draw pile: the engine computes the features

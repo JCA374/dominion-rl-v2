@@ -212,5 +212,5 @@
   "runs/*/config.json",
   "runs/*/curriculum.json"
  ],
- "main_run": "z1"
+ "main_run": "z1h"
 }
