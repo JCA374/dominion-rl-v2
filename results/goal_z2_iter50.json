@@ -1,0 +1,22 @@
+{
+ "t": "2026-11-18 19:00:38",
+ "label": "z2 iteration 50",
+ "note": "",
+ "policy": "runs/z2/net_50.npy",
+ "n": 1000,
+ "score": 0.612,
+ "ci": [
+  0.5814,
+  0.6417
+ ],
+ "big_money": 0.8975,
+ "smithy_bm": 0.69,
+ "witch_bm": 0.6875,
+ "secs": 3,
+ "vs_rl": 0.272,
+ "vs_rl_ci": [
+  0.2453,
+  0.3004
+ ],
+ "vs_rl_n": 1000
+}
