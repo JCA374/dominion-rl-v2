@@ -431,11 +431,53 @@ def turn_usage_table(W, n_kingdoms=150):
     return {"this net": tu.usage(W, games), **ref}
 
 
+def playvs_files(docs_dir):
+    """The Play-against-it page's files: the Python engine, play/rlplay.py + session.py, and the networks."""
+    import shutil
+    out = os.path.join(docs_dir, "playvs")
+    os.makedirs(os.path.join(out, "py", "dominion_engine"), exist_ok=True)
+    os.makedirs(os.path.join(out, "models"), exist_ok=True)
+    for f in ("__init__.py", "cards.py", "rules.py", "rng.py", "game.py", "bots.py"):
+        shutil.copyfile(os.path.join(ROOT, "engine", "dominion_engine", f), os.path.join(out, "py", "dominion_engine", f))
+    for f in ("rlplay.py", "session.py"):
+        shutil.copyfile(os.path.join(ROOT, "play", f), os.path.join(out, "py", f))
+    nets = _nets()
+    its = {int(p.split("_")[-1][:-4]): p for p in nets}
+    newest = max((i for i in its if i % 100 == 0), default=None)   # moves every 100 iterations (files are committed)
+    pick = []
+    if newest:
+        pick.append((f"rl-v2 (iteration {newest})", its[newest], "The newest self-play network: learned everything from games, starting from nothing."))
+    pick.append(("rl-v1 (the strongest)", os.path.join("opponents", "rl_r2_2200.npy"),
+                 "rl-v1 r2 at iteration 2,200: started as a copy of the GA genome, then PPO. 82.8% against the GA base. Hard."))
+    if 50 in its:
+        pick.append(("rl-v2, early self-play (iteration 50)", its[50], "After 50 iterations of playing itself: knows money and Provinces, not much more. Easy."))
+    if 0 in its:
+        pick.append(("rl-v2, iteration 0 (random)", its[0], "Random weights: every legal choice about equally likely. Very easy."))
+    models, keep = [], set()
+    for label, path, note in pick:
+        f = os.path.basename(path) if path.startswith("opponents") else f"{RUN}_{os.path.basename(path)}"
+        dst = os.path.join(out, "models", f)
+        if not os.path.exists(dst) or os.path.getmtime(dst) < os.path.getmtime(os.path.join(ROOT, path)):
+            shutil.copyfile(os.path.join(ROOT, path), dst)
+        keep.add(f)
+        models.append({"label": label, "name": label.split(" (")[0] if "rl-v1" in label else label, "file": f, "note": note})
+    models.append({"label": "Big Money (a simple bot)", "name": "Big Money", "file": None,
+                   "note": "Buys Province at $8, Gold at $6, Silver at $3, nothing else. A good first opponent."})
+    for f in os.listdir(os.path.join(out, "models")):
+        if f not in keep:
+            os.remove(os.path.join(out, "models", f))
+    json.dump(models, open(os.path.join(out, "models.json"), "w"), indent=1)
+
+
 def extra(data_dir):
     try:
         favorites(data_dir)
     except Exception as ex:                       # never stops the publisher
         print("favorites failed:", ex)
+    try:
+        playvs_files(os.path.dirname(data_dir))
+    except Exception as ex:
+        print("playvs failed:", ex)
     out = {}
     for p in sorted(glob.glob(os.path.join(ROOT, "results", "*.json"))):
         out[os.path.basename(p)[:-5]] = json.load(open(p))

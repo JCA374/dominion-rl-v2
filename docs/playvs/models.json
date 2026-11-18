@@ -1,0 +1,32 @@
+[
+ {
+  "label": "rl-v2 (iteration 1000)",
+  "name": "rl-v2 (iteration 1000)",
+  "file": "z1_net_1000.npy",
+  "note": "The newest self-play network: learned everything from games, starting from nothing."
+ },
+ {
+  "label": "rl-v1 (the strongest)",
+  "name": "rl-v1",
+  "file": "rl_r2_2200.npy",
+  "note": "rl-v1 r2 at iteration 2,200: started as a copy of the GA genome, then PPO. 82.8% against the GA base. Hard."
+ },
+ {
+  "label": "rl-v2, early self-play (iteration 50)",
+  "name": "rl-v2, early self-play (iteration 50)",
+  "file": "z1_net_50.npy",
+  "note": "After 50 iterations of playing itself: knows money and Provinces, not much more. Easy."
+ },
+ {
+  "label": "rl-v2, iteration 0 (random)",
+  "name": "rl-v2, iteration 0 (random)",
+  "file": "z1_net_0.npy",
+  "note": "Random weights: every legal choice about equally likely. Very easy."
+ },
+ {
+  "label": "Big Money (a simple bot)",
+  "name": "Big Money",
+  "file": null,
+  "note": "Buys Province at $8, Gold at $6, Silver at $3, nothing else. A good first opponent."
+ }
+]
