@@ -30,3 +30,9 @@
 {"t": "2026-11-18T19:02:25", "kind": "goal_best", "iter": 63, "check": {"score": 0.6125, "n": 400}, "champion": "runs/z2/net_63.npy", "eval": "GA 0.613 BM 0.885 Smithy 0.765 Witch 0.740 bots 0.797"}
 {"t": "2026-11-18T19:04:07", "kind": "goal_best", "iter": 75, "check": {"score": 0.6162, "n": 400}, "champion": "runs/z2/net_75.npy", "eval": "GA 0.616 BM 0.895 Smithy 0.780 Witch 0.760 bots 0.812"}
 {"t": "2026-11-18T19:14:53", "kind": "run_resume", "iter": 76, "stage": "self-play"}
+{"t": "2026-11-18T19:34:56", "kind": "run_resume", "iter": 76, "stage": "self-play"}
+{"t": "2026-11-18T19:35:09", "kind": "goal_best", "iter": 76, "check": {"score": 0.6162, "n": 400}, "champion": "runs/z2/net_76.npy", "eval": "GA 0.616 BM 0.860 Smithy 0.780 Witch 0.755 bots 0.798"}
+{"t": "2026-11-18T19:37:47", "kind": "goal_best", "iter": 86, "check": {"score": 0.6312, "n": 400}, "champion": "runs/z2/net_86.npy", "eval": "GA 0.631 BM 0.880 Smithy 0.840 Witch 0.690 bots 0.803"}
+{"t": "2026-11-18T19:38:04", "kind": "goal_best", "iter": 87, "check": {"score": 0.6375, "n": 400}, "champion": "runs/z2/net_87.npy", "eval": "GA 0.637 BM 0.815 Smithy 0.805 Witch 0.675 bots 0.765"}
+{"t": "2026-11-18T19:42:32", "kind": "goal_best", "iter": 100, "check": {"score": 0.6438, "n": 400}, "champion": "runs/z2/net_100.npy", "eval": "GA 0.644 BM 0.865 Smithy 0.810 Witch 0.710 bots 0.795"}
+{"t": "2026-11-18T19:45:36", "kind": "goal_best", "iter": 101, "check": {"score": 0.6475, "n": 400}, "champion": "runs/z2/net_101.npy", "eval": "GA 0.647 BM 0.860 Smithy 0.795 Witch 0.705 bots 0.787"}
