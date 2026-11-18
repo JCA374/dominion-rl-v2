@@ -66,3 +66,33 @@ def test_net_agent_plays_like_c():
                 a = rlplay.NetAgent(W).decide(game, d)
                 assert (PASS if a == -1 else a) == rec["A"][j], (j, d)
         _replay(k, 2000 + i, rec, check)
+
+
+def test_online_game_smithy_draws_three_and_logs_them():
+    """The online game's session: playing Smithy draws exactly 3 cards, and the log says which."""
+    sys.path.insert(0, os.path.join(ROOT, "engine"))
+    import session as S
+    from dominion_engine.cards import ID, NAME
+    k = ["Smithy", "Village", "Market", "Laboratory", "Festival", "Moat", "Cellar", "Chapel", "Gardens", "Mine"]
+    seen = 0
+    for seed in range(200):
+        s = S.Session(k, seed, "Big Money", None, human=0)
+        while s.d is not None and seen < 8:
+            d = s.d
+            if d.kind == 0 and ID["Smithy"] in d.options:
+                p = s.g.players[0]
+                hand, deck_disc = len(p.hand), len(p.deck) + len(p.discard)
+                s.answer(ID["Smithy"])
+                drew = min(3, deck_disc)
+                if s.d is not None and s.d.kind in (0, 1):      # still in the same turn, before the treasures
+                    if s.d.kind == 0:
+                        assert len(p.hand) == hand - 1 + drew
+                line = [l for l in s.log if l["text"].startswith("play action: Smithy")][-1]["text"]
+                assert line.count(",") == drew - 1 and "draws" in line, line
+                seen += 1
+                continue
+            opts = list(d.options) + ([-1] if d.may_pass else [])
+            s.answer(ID["Smithy"] if ID["Smithy"] in opts and d.kind == 1 and seed % 2 else opts[-1] if d.kind != 1 else (ID["Smithy"] if ID["Smithy"] in opts else -1))
+        if seen >= 8:
+            break
+    assert seen >= 8

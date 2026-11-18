@@ -37,6 +37,23 @@ class Session:
         self.log = []
         self.result = None
         self.d = None
+        self._draws = []                              # (player, cards) for every draw, as the engine makes it
+        self._open = None                             # the action whose effects are being collected
+        engine_draw = self.g._draw
+
+        def draw(p, n):
+            before = len(p.hand)
+            engine_draw(p, n)
+            self._draws.append((self.g.players.index(p), p.hand[before:]))
+        self.g._draw = draw
+        engine_gain = self.g._gain
+
+        def gain(p, card, to="discard"):
+            ok = engine_gain(p, card, to)
+            if ok:
+                self._draws.append((self.g.players.index(p), ("gain", card)))
+            return ok
+        self.g._gain = gain
         self._advance(None, first=True)
 
     def _say(self, who, d, ans):
@@ -47,12 +64,52 @@ class Session:
         else:
             what = {0: "ends actions", 1: "ends turn"}.get(d.kind, "no") if ans < 0 else NAME[ans]
         about = f" ({NAME[d.subject]})" if 0 <= d.subject < NUM_CARDS and d.kind in (6, 8, 14, 15, 16) else ""
-        self.log.append({"turn": self.g.players[who].turns + 1, "who": p, "text": f"{kind}{about}: {what}"})
+        entry = {"turn": self.g.players[who].turns + 1, "who": p, "text": f"{kind}{about}: {what}"}
+        self.log.append(entry)
+        if d.kind in (0, 2, 14) and ans >= 0:         # play action, Throne Room's choice, Vassal's card
+            self._open = {"entry": entry, "card": ans, "who": who, "start": len(self._draws), "times": 2 if d.kind == 2 else 1}
+
+    def _close(self):
+        """Append to the open action's log line what it did: the cards it drew, +Actions, +Buys, +$."""
+        o, self._open = self._open, None
+        if o is None:
+            return
+        c, t = CARDS[o["card"]], o["times"]
+        drawn = {0: [], 1: []}
+        gained = {0: [], 1: []}
+        for who, x in self._draws[o["start"]:]:
+            if isinstance(x, tuple):
+                gained[who].append(x[1])
+            else:
+                drawn[who].extend(x)
+        me, other = o["who"], 1 - o["who"]
+        parts = []
+        for who in (me, other):
+            mine = who == me
+            if drawn[who]:
+                if who == self.human:
+                    parts.append(("draws " if mine else "you draw ") + ", ".join(NAME[x] for x in drawn[who]))
+                else:
+                    n = len(drawn[who])
+                    parts.append(("draws" if mine else "opponent draws") + f" {n} card{'s' if n > 1 else ''}")
+            if gained[who]:
+                parts.append(("gains " if mine else ("you gain " if who == self.human else "opponent gains "))
+                             + ", ".join(NAME[x] for x in gained[who]))
+        for n, word in ((c.actions, "action"), (c.buys, "buy")):
+            if n:
+                parts.append(f"+{n * t} {word}{'s' if n * t > 1 else ''}")
+        if c.coins:
+            parts.append(f"+${c.coins * t}")
+        if t == 2:
+            parts.insert(0, "played twice")
+        if parts:
+            o["entry"]["text"] += " → " + "; ".join(parts)
 
     def _advance(self, ans, first=False):
         try:
             d = next(self.gen) if first else self.gen.send(ans)
             while True:
+                self._close()
                 forced = len(d.options) + bool(d.may_pass) == 1
                 if d.player == self.human and not forced:
                     self.d = d
@@ -62,6 +119,7 @@ class Session:
                     self._say(d.player, d, a)
                 d = self.gen.send(a)
         except StopIteration as stop:
+            self._close()
             self.result = stop.value
             self.d = None
 
