@@ -210,7 +210,7 @@ def model_viz(out_dir):
         return entries
     net = load(pt)
     sd = net.state_dict()
-    fig_arch([("input: what it knows at a decision", core.NF), ("dense ReLU", net.nh), ("dense ReLU", net.nh),
+    fig_arch([("input: what it knows at a decision", net.nf), ("dense ReLU", net.nh), ("dense ReLU", net.nh),
                   ("34 logits + 1 win estimate", core.NA + 1)], paths["arch"], title=f"Net {it}")
     fig_weight_hist([("W1", sd["l1.weight"].numpy()), ("W2", sd["l2.weight"].numpy()),
                          ("policy", sd["pi.weight"].numpy()), ("value", sd["v.weight"].numpy())], paths["weights"])
@@ -239,9 +239,9 @@ def model_viz(out_dir):
             vals.append(float((pick[m] == A[m]).mean()))
     fig_bars(names, vals, paths["agreement"], title="Top choice = the GA genome's choice, per kind of decision", ylabel="share of decisions (number of decisions in brackets)", fmt="{:.0%}")
     std = X.std(0)
-    eff = np.zeros(core.NF)
+    eff = np.zeros(net.nf)
     with torch.no_grad():
-        for j in range(core.NF):
+        for j in range(net.nf):
             if std[j] == 0:
                 continue
             X2 = X.copy()
@@ -327,6 +327,12 @@ def feature_names():
     names = AZH.feature_names()
     names += [f"hand: {NAME[c]}" for c in range(N)] + [f"in play: {NAME[c]}" for c in range(N)]
     names += ["actions left", "my turn"] + [f"kind: {k}" for k in core.KINDS] + [f"about: {NAME[c]}" for c in range(N)]
+    names += ["next hand: expected coins", "next hand: chance of $3+", "next hand: chance of $5+",
+              "next hand: chance of $6+", "next hand: chance of $8+", "next hand: expected action cards",
+              "next hand: expected +Actions", "next hand: expected +Buys", "next hand: expected +Cards",
+              "next turn: expected VP gain", "next turn: expected VP"]
+    names += [f"deck per 5 cards: {w}" for w in ("coins", "action cards", "+Actions", "+Buys", "+Cards")]
+    names += [f"if I gain {NAME[c]}: {w}" for w in ("coins per 5", "+Actions per 5", "+Buys per 5") for c in range(N)]
     assert len(names) == core.NF
     return names
 
