@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Study</title>
+<link rel="stylesheet" href="style.css?v=d5cc2c7c">
+</head>
+<body>
+<main>
+<h1>Study this project</h1>
+<p class="lede">For someone who wants to learn from this project rather than follow it: what to read in which order, the ideas
+you need, the words we use, how to run it yourself, and a few exercises.</p>
+
+<section>
+  <h2>Reading order</h2>
+<ol id="order">
+    <li><a href="index.html">Overview</a>: the question (can self-play from nothing beat a network that started as a copy?) and the stages. 5 minutes.</li>
+    <li><a href="curriculum.html">Curriculum</a>: the three stages and what ends each. 3 minutes.</li>
+    <li><a href="model.html">The model</a>: where the learning signal comes from when the opponent is itself; the "What it buys" figure. 15 minutes.</li>
+    <li><a href="training.html">Training</a>: the score against the GA genome and the bots, which it never trains on in stage 1, and the game length and entropy charts. 5 minutes.</li>
+    <li><a href="play.html">Play</a>: watch iteration 0, early self-play and the newest network on the same game. 10 minutes.</li>
+    <li>The code: <code>train.py</code> (<code>STAGES</code>, <code>pick_opponent</code>, <code>ppo_update</code>),
+      <code>rl/jobs.py</code> (<code>gae</code>: the advantage in 12 lines), <code>c/rl.c</code> (features, forward pass,
+      sampling). 1 hour.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>Key concepts</h2>
+<div class="box"><h3>Self-play</h3><p>The network plays against a copy of itself. The opponent is always exactly as
+strong as the learner, so every game is informative: never hopeless, never trivially won. <b>Here:</b> stage 1, 80% of
+the games (both seats learn). <b>What people get wrong:</b> a rising score against itself means nothing (it is always
+about 50%); progress has to be measured against fixed opponents it does not train on, here the GA genome and the
+bots.</p></div>
+<div class="box"><h3>Starting from random (tabula rasa)</h3><p>No examples and no rules: the weights are random, every
+legal choice is about equally likely. <b>Here:</b> <code>bc_games = 0</code>, iteration 0. <b>What people get
+wrong:</b> it is not hopeless. In a random game the side that happens to buy more money and Provinces still wins more
+often, and that small bias is enough signal to start.</p></div>
+<div class="box"><h3>Policy gradient</h3><p>Change the network so that the choices in games that went well become more
+likely. The "how well" is the advantage. <b>Here:</b> <code>ppo_update</code>. <b>What people get wrong:</b> it does not
+know <i>which</i> of a game's 40 decisions won it; only averaging over many games sorts good decisions from lucky ones,
+which is why it needs millions of games.</p></div>
+<div class="box"><h3>Advantage and GAE</h3><p>The advantage of a decision is how much better things went than the
+network itself expected at that moment. GAE builds it from the network's own win estimates along the game (λ = 0.95).
+<b>Here:</b> <code>gae()</code> in <code>rl/jobs.py</code>. <b>What people get wrong:</b> with a bad win estimate the
+advantages are bad too; the value head matters even though it never makes a decision.</p></div>
+<div class="box"><h3>PPO's clip</h3><p>One update may change the probability of a recorded choice by at most ±20%;
+beyond that the gradient stops. It keeps learning from noisy data from destroying a good policy in one step.
+<b>Where:</b> <code>clip</code>, <code>max_kl</code> in <code>CFG</code>; the "PPO step size" chart on Training.</p></div>
+<div class="box"><h3>Exploration by sampling, evaluation by argmax</h3><p>In training the network draws its choices at
+random from its probabilities; in every measurement it takes its top choice. <b>What people get wrong:</b> comparing the
+training games' win rate (with exploration) with the evaluation (without).</p></div>
+<div class="box"><h3>A league of opponents</h3><p>Opponents from several sources so the policy stays good against all of
+them, not just the latest. <b>Here:</b> stage 1 only past selves (20%); stage 3 everything: the GA genome, the bots,
+az-v1, rl-v1. <b>What people get wrong:</b> pure self-play can cycle (A beats B beats C beats A) without getting
+better.</p></div>
+</section>
+
+<section>
+  <h2>Glossary</h2>
+  <p class="muted small">From <code>glossary.md</code> in the repo (one <code>**term** — meaning</code> per line). The podcast narration uses the same list for names that need a pronunciation.</p>
+  <dl class="glossary" id="glossary"></dl>
+</section>
+
+<section>
+  <h2>Reproduce it</h2>
+<p>8-core laptop CPU (i5-8250U), 8 GB RAM, Linux, Python 3.14, gcc:</p>
+<pre>git clone --recursive https://github.com/JCA374/dominion-rl-v2 && cd dominion-rl-v2
+python3 -m venv .venv && .venv/bin/pip install torch --index-url https://download.pytorch.org/whl/cpu
+.venv/bin/pip install numpy pytest pillow matplotlib
+.venv/bin/python -m pytest -q tests        # builds rl.so; "4 passed"
+.venv/bin/python -u train.py --run mine --set games=1500   # from random; ~14 s per iteration at first
+.venv/bin/python experiments/goal_check.py runs/mine/net_25.npy --name mine25 --vs_az   # ~4 min</pre>
+<p>Needs about 2 GB of free memory: the first iterations' random games are long (1,500 games ≈ 300,000 decisions × 298 inputs).</p>
+</section>
+
+<section>
+  <h2>Exercises</h2>
+<ol>
+  <li><b>Easy: watch it learn to buy.</b> Run 20 iterations and draw the "What it buys" figure
+    (<code>site_hooks.fig_buys</code>). When do Curses disappear? When does Province overtake Duchy?</li>
+  <li><b>Medium: no past selves.</b> Change stage 1's shares to <code>{}</code> (only the current net) and compare the
+    evaluation against the GA genome after 100 iterations. Does it cycle?</li>
+  <li><b>Medium: exploration.</b> <code>ent=0</code> versus <code>ent=0.03</code>: watch the entropy chart. From random,
+    too little entropy can lock in an early habit.</li>
+  <li><b>Hard: is the teacher a ceiling?</b> Compare this run's best with rl-v1's at the same number of games, and head
+    to head (<code>experiments/goal_check.py</code> with an rl-v1 net as the opponent).</li>
+</ol>
+</section>
+</main>
+<script src="site.js?v=15787d5c"></script>
+<script src="common.js?v=958183f8"></script>
+<script src="project.js?v=0467ffc4"></script>
+<script src="study.js?v=ca69f153"></script>
+</body>
+</html>

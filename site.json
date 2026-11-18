@@ -1,0 +1,211 @@
+{
+ "title": "Dominion from zero",
+ "icon": "\ud83c\udf31",
+ "repo": "JCA374/dominion-rl-v2",
+ "goal": {
+  "metric": "score",
+  "target": 0.828,
+  "label": "Score vs GA base",
+  "columns": [
+   [
+    "vs_az",
+    "vs az-v1 best (head to head)"
+   ],
+   [
+    "big_money",
+    "vs Big Money"
+   ],
+   [
+    "smithy_bm",
+    "vs Smithy-BM"
+   ],
+   [
+    "witch_bm",
+    "vs Witch-BM"
+   ]
+  ]
+ },
+ "goal_text": "learn from nothing, by self-play first, and end up better than rl-v1 (which started by imitating the GA genome): above its 82.8% on az-v1's 1,000 goal games against the GA base genome",
+ "names": {},
+ "chart": {
+  "x": "iter",
+  "x_scale": 1,
+  "x_label": "PPO iteration (1,500 games each)",
+  "y_label": "score %",
+  "series": [
+   {
+    "key": "eval_GA_base",
+    "label": "vs GA base (400 eval games; never trained against in stage 1)",
+    "style": "both",
+    "color": "--accent"
+   },
+   {
+    "key": "eval_bots",
+    "label": "vs the 3 bots (300 eval games; never trained against in stage 1)",
+    "style": "both",
+    "color": "--good"
+   },
+   {
+    "key": "selfplay_vs_past",
+    "label": "training games vs its past snapshots (sampling)",
+    "style": "points",
+    "color": "--bad"
+   }
+  ]
+ },
+ "charts": [
+  {
+   "title": "Stage",
+   "percent": false,
+   "series": [
+    {
+     "key": "stage",
+     "label": "1 self-play \u00b7 2 bots \u00b7 3 league"
+    }
+   ]
+  },
+  {
+   "title": "Game length: random play ends late",
+   "percent": false,
+   "series": [
+    {
+     "key": "eval_turns",
+     "label": "turns per evaluation game"
+    }
+   ]
+  },
+  {
+   "title": "Policy entropy: from random to decided",
+   "percent": false,
+   "series": [
+    {
+     "key": "entropy",
+     "label": "mean entropy of its choices (1.37 = random at the start)"
+    }
+   ]
+  },
+  {
+   "title": "Win estimate error",
+   "percent": false,
+   "series": [
+    {
+     "key": "value_mse_fresh",
+     "label": "value vs final result on fresh games (1.0 = no idea)"
+    }
+   ]
+  },
+  {
+   "title": "Each bot separately",
+   "y_label": "score %",
+   "percent": true,
+   "series": [
+    {
+     "key": "eval_Big_Money",
+     "label": "Big Money"
+    },
+    {
+     "key": "eval_Smithy_BM",
+     "label": "Smithy-BM"
+    },
+    {
+     "key": "eval_Witch_BM",
+     "label": "Witch-BM"
+    }
+   ]
+  },
+  {
+   "title": "Training games against the league",
+   "y_label": "score %",
+   "percent": true,
+   "series": [
+    {
+     "key": "selfplay_vs_bots",
+     "label": "vs bots"
+    },
+    {
+     "key": "selfplay_vs_ga",
+     "label": "vs GA"
+    },
+    {
+     "key": "selfplay_vs_rlv1",
+     "label": "vs rl-v1"
+    },
+    {
+     "key": "selfplay_vs_aznet",
+     "label": "vs az-v1 net"
+    }
+   ]
+  },
+  {
+   "title": "PPO step size",
+   "percent": false,
+   "series": [
+    {
+     "key": "kl",
+     "label": "approximate KL per update"
+    },
+    {
+     "key": "clipfrac",
+     "label": "share of clipped ratios"
+    }
+   ]
+  },
+  {
+   "title": "Iteration time",
+   "percent": false,
+   "y_label": "seconds",
+   "series": [
+    {
+     "key": "t_play",
+     "label": "play"
+    },
+    {
+     "key": "t_train",
+     "label": "PPO update"
+    },
+    {
+     "key": "t_iter",
+     "label": "whole iteration"
+    }
+   ]
+  }
+ ],
+ "cards": [
+  {
+   "label": "Iteration",
+   "key": "iter",
+   "sub": "1,500 games each"
+  },
+  {
+   "label": "Stage",
+   "key": "stage",
+   "sub": "1 self-play \u00b7 2 bots \u00b7 3 league"
+  },
+  {
+   "label": "vs GA base",
+   "key": "eval_GA_base",
+   "fmt": "pct",
+   "sub": "400 eval games, \u00b15%"
+  },
+  {
+   "label": "vs bots",
+   "key": "eval_bots",
+   "fmt": "pct",
+   "sub": "300 eval games"
+  },
+  {
+   "label": "Entropy",
+   "key": "entropy",
+   "sub": "1.37 = random"
+  }
+ ],
+ "stale_minutes": 60,
+ "alive_pattern": "^.venv/bin/python -u train.py --run {run}( |$)",
+ "replay_kinds": [],
+ "push_globs": [
+  "runs/*/stats.csv",
+  "runs/*/events.jsonl",
+  "runs/*/config.json",
+  "runs/*/curriculum.json"
+ ]
+}

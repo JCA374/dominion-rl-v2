@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overview</title>
+<link rel="stylesheet" href="style.css?v=d5cc2c7c">
+</head>
+<body>
+<main>
+<header class="hero">
+  <h1>Learning Dominion from nothing, by playing against itself</h1>
+  <p class="lede">The fourth method for the Dominion project. A network that starts <b>random</b>, with no examples, no
+hand-written rules and no imitation, and learns every decision of the game (buys, actions, trashing, gaining,
+discarding) only from the results of games against <b>itself</b>. Only later does it meet the bots and the earlier
+models. <b>The question:</b> how far does pure self-play get on its own, and can it end up better than rl-v1, which
+started by copying the evolved GA genome and now scores 82.8% against it and 71.7% head to head against az-v1?</p>
+  <p class="countdown" id="countdown"></p>
+</header>
+
+<section>
+  <h2>Status now</h2>
+  <div class="cards" id="cards"></div>
+  <p class="muted small">Numbers come from the run files and update every 15 minutes. Details on the <a href="training.html">Training</a> tab; the stages on <a href="curriculum.html">Curriculum</a>.</p>
+</section>
+
+<section>
+  <h2>What this is</h2>
+<p>Dominion is a deck-building card game: every turn you play action cards from your hand, then buy cards for your
+deck; the player with the most victory points when the game ends wins. A game has about 40 real decisions per player,
+of about 20 kinds.</p>
+<p><b>Where it starts.</b> At iteration 0 the network's weights are random numbers, so each legal choice is about equally
+likely. It buys Curses as happily as Provinces, plays nothing, buys nothing. Against the GA genome and the bots it
+loses <b>every</b> game. A random game takes about 26 turns per player and is almost always ended by the turn limit
+or by three empty piles, not by the Provinces running out.</p>
+<p><b>How it gets better with no teacher.</b> Two copies of the same network play each other. One of them wins,
+usually because by chance it bought a few more Silvers, Golds or Provinces. Every decision the winner made becomes a
+little more likely, every decision the loser made a little less. Repeat for thousands of games, and "buy the thing
+that wins" emerges: first money and Provinces, then which actions are worth playing. Because the opponent is always
+itself, it is always an even match: never too easy, never hopeless, which is what makes self-play work.</p>
+<p><b>The danger.</b> A player that only ever meets itself can get stuck: it learns to beat its own habits, not to
+play well, and can go round in circles (A beats B beats C beats A). Two defences: 20% of its games are against its own
+<b>past snapshots</b> (so it may not forget how to beat old versions), and it is <b>measured</b> after every update
+against opponents it never trains on in stage 1: the GA genome and the three bots. That measurement is how you can see,
+on this site, whether self-play is learning Dominion or only learning to beat itself.</p>
+<p><b>What came before.</b> <a href="https://github.com/JCA374/dominion-v1">dominion-v1</a> evolved priority lists with a
+genetic algorithm (the "GA genome"). <a href="https://jca374.github.io/dominion-az-v1/">az-v1</a> replaced the genome's
+buys with an AlphaZero-style search (70% against the genome). <a href="https://jca374.github.io/dominion-rl-v1/">rl-v1</a>
+is this project's parent: the same network and the same PPO, but it started as a copy of the genome (imitation), then
+improved by reinforcement learning against a league. rl-v2 changes only the start: no imitation, self-play first.</p>
+</section>
+
+<section>
+  <h2>Approach</h2>
+<p><b>Stage 1, self-play.</b> Each iteration plays 1,500 games: 80% the network against itself (both seats learn),
+20% against one of its last 8 snapshots (taken every 10 iterations). The stage runs until the measured score against
+the GA genome has not set a new best for 60 iterations: self-play has stopped improving by itself (at most 400
+iterations). <b>Stage 2, the bots.</b> 35% of games against Big Money, Smithy-BM and Witch-BM, until it beats them 70%
+of the time (at most 400 iterations). <b>Stage 3, the league.</b> Every earlier model: the GA genome, az-v1's network and
+its search, and rl-v1's networks, plus the bots and its past selves.</p>
+<p><b>How one update works (PPO).</b> The network <i>samples</i> its choices from its own probabilities, so it tries
+things. After the games, each decision gets an <i>advantage</i>: how much better the game ended than the network's own
+win estimate expected at that moment. Choices with a positive advantage are made more likely, negative ones less, and
+PPO caps how far one update may move the policy, so one lucky batch cannot wreck it.</p>
+<pre class="diagram">
+ random network (iteration 0: loses every game)
+        │
+        ▼
+ ┌──────────────────────────────────────┐   choices, probabilities,
+ │ 1,500 games, the net SAMPLING          │   win estimates, results
+ │ stage 1: itself 80% · past selves 20%  │ ───────────────────────┐
+ │ stage 2: + the 3 bots                  │                        ▼
+ │ stage 3: + GA genome, az-v1, rl-v1     │       advantages (GAE) ─▶ PPO update
+ └──────────────────────────────────────┘                          │
+        ▲                                                           │
+        └───────────────────────── new net ◀────────────────────────┘
+      after every update: 400 games vs the GA genome + 300 vs the bots
+      (top choice, only MEASURED; in stage 1 it never trains against them)
+      every 25 updates: the goal check (1,000 + 600 games never used in training)
+</pre>
+<p><b>Real numbers</b> (8-core laptop CPU, no GPU): 151,331 weights (298 inputs → 256 → 256 → 34 choices + 1 win
+estimate), the same network as rl-v1, running in C inside the game engine. Early random games are long and slow (about
+14 s per iteration); once it plays sensibly an iteration takes 5–10 s.</p>
+</section>
+
+<section>
+  <h2>Decisions <span class="muted small">newest first · why things are the way they are</span></h2>
+  <p class="muted small">Logged with <code>python experiments/journal.py --decision "title" "what was chosen and why" "what was rejected"</code>.</p>
+  <div id="decisions"></div>
+</section>
+
+<section>
+  <h2>How to read this site</h2>
+  <div id="guide"></div>
+</section>
+
+<section>
+  <h2>Repo layout</h2>
+<pre class="diagram">
+train.py          the stages (STAGES), PPO from a random network, the evaluation; writes runs/&lt;run&gt;/
+c/rl.c            the agent in C: 298 features of any decision, the network's forward pass, sampling, recording
+rl/               Python: core.py (ctypes bridge), net.py (PyTorch model + export to C), jobs.py (game jobs, GAE)
+experiments/      goal_check.py (az-v1's goal games + head to head), confirm.py, journal.py
+opponents/        the earlier models it meets in stage 3: az-v1's best net, rl-v1's nets
+results/          every measured number (goal_*, ...)
+engine/           submodule: the rules (dominion-engine)
+az-v1/            submodule: az-v1 (its agent, and through it dominion-v1's GA genomes and bots)
+tests/            engine pins agree, C and PyTorch nets agree, GA seats replay az-v1's games exactly
+publish.py, site_hooks.py, site.json, docs/    this site
+</pre>
+</section>
+</main>
+<footer>Updated automatically every 15 minutes. Numbers are measured on fresh games, not estimated.</footer>
+<script src="site.js?v=15787d5c"></script>
+<script src="common.js?v=958183f8"></script>
+<script src="project.js?v=0467ffc4"></script>
+<script src="overview.js?v=cb92b7c0"></script>
+</body>
+</html>

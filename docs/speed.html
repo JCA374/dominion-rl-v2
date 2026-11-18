@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Speed</title>
+<link rel="stylesheet" href="style.css?v=d5cc2c7c">
+</head>
+<body>
+<main>
+<h1>Speed</h1>
+<p class="lede">Intel i5-8250U laptop CPU, 4 cores / 8 threads, 8 GB RAM, no GPU.
+Everything that happens inside a game is C (the engine, the GA genome, az-v1's agent and this project's network); PyTorch
+only trains. Measured end to end:</p>
+<div class="tablewrap"><table class="t">
+<tr><th>What</th><th>Time</th></tr>
+<tr><td>a game, network (sampling, recording) vs GA genome, one core</td><td>2.9 ms</td></tr>
+<tr><td>a game, GA genome vs GA genome</td><td>0.27 ms</td></tr>
+<tr><td>a game, az-v1's searching agent (400 simulations per buy) vs GA genome</td><td>460 ms</td></tr>
+<tr><td>a PPO iteration at the start: 1,500 random self-play games (~210 decisions each) + update + 700 eval games</td><td>~14 s</td></tr>
+<tr><td>a PPO iteration once it plays sensibly (games shorter, fewer decisions)</td><td>~5–10 s</td></tr>
+</table></div>
+<p>The network plays a whole game in the time az-v1's agent needs for one simulation of one buy times 30: that speed is
+what makes learning from millions of games possible. Random play is the slow part: games last until the turn limit
+or three empty piles, and a random player is asked many more questions per game. That is also why this run uses
+1,500 games per iteration instead of rl-v1's 3,000: the first iterations' data did not fit in the 8 GB of memory. Per-iteration times are on the Training tab ("Iteration time").</p>
+<p class="muted"></p>
+</main>
+<script src="site.js?v=15787d5c"></script>
+<script src="common.js?v=958183f8"></script>
+<script src="project.js?v=0467ffc4"></script>
+
+</body>
+</html>

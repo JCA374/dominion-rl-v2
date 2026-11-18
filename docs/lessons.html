@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lessons</title>
+<link rel="stylesheet" href="style.css?v=d5cc2c7c">
+</head>
+<body>
+<main>
+<h1>Lessons</h1>
+<p class="lede">What this project and earlier ones taught. Newest first.</p>
+<div class="box"><h3>From this project</h3><ul id="new">
+  <li><b>A teacher is not needed to get off the ground.</b> rl-v1's lessons said that starting RL from a random network
+    "would have spent hours relearning what the genome already knew". The first (aborted) start of this run showed the
+    opposite for the basics: from random weights, self-play alone went from 0% to 45% against Big Money and 20% against
+    the GA genome in 9 iterations (about two minutes), never having played either. Whether it gets past the teacher in
+    the end is what this run is for.</li>
+  <li><b>Memory, not CPU, limited the start.</b> Random players make long games with many decisions; 3,000 such games
+    per iteration (as in rl-v1) ran an 8 GB laptop out of memory. 1,500 games per iteration fit.</li>
+</ul></div>
+<div class="box"><h3>From rl-v1 (this project's parent)</h3><ul>
+  <li><b>You can only beat what you practise against.</b> rl-v1 tied az-v1 head to head until az-v1 joined its league;
+    then it won 55%, and after 2,200 iterations 72%. Here the earlier models join in stage 3.</li>
+  <li><b>Speed is a feature.</b> 3 ms per game inside the C engine, against 460 ms for az-v1's search: millions of
+    practice games on a laptop.</li>
+  <li><b>Confirm once, on games never used, with the rival on the same games.</b> This project has its own never-used
+    confirmation set (<code>experiments/confirm.py</code>, a new seed), for the end.</li>
+</ul></div>
+<div class="box"><h3>From az-v1</h3><ul>
+  <li><b>Keep one number on data the model never trained on.</b> Here: the evaluation against the GA genome and the bots
+    during stage 1, which the network never trains against, and the win estimate's error on fresh games.</li>
+</ul></div>
+</main>
+<script src="site.js?v=15787d5c"></script>
+<script src="common.js?v=958183f8"></script>
+<script src="project.js?v=0467ffc4"></script>
+
+</body>
+</html>
