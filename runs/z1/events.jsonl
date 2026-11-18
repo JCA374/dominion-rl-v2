@@ -33,3 +33,9 @@
 {"t": "2026-11-18T13:31:26", "kind": "goal_best", "iter": 159, "check": {"score": 0.6238, "n": 400}, "champion": "runs/z1/net_159.npy", "eval": "GA 0.624 BM 0.815 Smithy 0.765 Witch 0.630 bots 0.737"}
 {"t": "2026-11-18T13:31:43", "kind": "goal_best", "iter": 162, "check": {"score": 0.63, "n": 400}, "champion": "runs/z1/net_162.npy", "eval": "GA 0.630 BM 0.865 Smithy 0.740 Witch 0.640 bots 0.748"}
 {"t": "2026-11-18T13:33:04", "kind": "goal_best", "iter": 177, "check": {"score": 0.64, "n": 400}, "champion": "runs/z1/net_177.npy", "eval": "GA 0.640 BM 0.835 Smithy 0.800 Witch 0.700 bots 0.778"}
+{"t": "2026-11-18T13:39:11", "kind": "goal_best", "iter": 220, "check": {"score": 0.6425, "n": 400}, "champion": "runs/z1/net_220.npy", "eval": "GA 0.642 BM 0.845 Smithy 0.740 Witch 0.695 bots 0.760"}
+{"t": "2026-11-18T13:43:49", "kind": "goal_best", "iter": 272, "check": {"score": 0.6512, "n": 400}, "champion": "runs/z1/net_272.npy", "eval": "GA 0.651 BM 0.875 Smithy 0.790 Witch 0.720 bots 0.795"}
+{"t": "2026-11-18T13:50:53", "kind": "stage_pass", "stage": "self-play", "index": 0, "iter": 332, "why": "no new best against the GA base for 60 iterations (best 0.651 at 272)", "champion": "runs/z1/net_332.npy", "eval": "GA 0.636 BM 0.875 Smithy 0.775 Witch 0.735 bots 0.795"}
+{"t": "2026-11-18T13:50:53", "kind": "stage_start", "stage": "bots", "index": 1, "iter": 333, "expect": "Learns to punish the bots' fixed habits (Witch-BM's curses above all)."}
+{"t": "2026-11-18T13:50:57", "kind": "stage_pass", "stage": "bots", "index": 1, "iter": 333, "why": "eval bots 0.798 >= 0.7", "champion": "runs/z1/net_333.npy", "eval": "GA 0.645 BM 0.885 Smithy 0.785 Witch 0.725 bots 0.798"}
+{"t": "2026-11-18T13:50:57", "kind": "stage_start", "stage": "league", "index": 2, "iter": 334, "expect": "Meets every earlier model; the target is rl-v1 (82% against the GA base, 72% against az-v1)."}
