@@ -11,6 +11,18 @@
 <h1>Lessons</h1>
 <p class="lede">What this project and earlier ones taught. Newest first.</p>
 <div class="box"><h3>From this project</h3><ul id="new">
+  <li><b>Self-play from zero finds a style early and then keeps it.</b> By iteration 250 (about 40 minutes) it played
+    money plus attacks: Witch, Militia, Bandit, Gardens, about 0.5 actions per turn. 600 iterations later it still
+    did, while rl-v1, which started from the GA genome's equally plain style, slowly turned into an engine player
+    (Sentry, Laboratory, Poacher, Market: 1.6 actions per turn) and beats it 65% of the time. A style that pays off
+    only once you play it well (a Village is a wasted buy until you chain actions) is hard to find by trying
+    single changes.</li>
+  <li><b>Check the mechanics, not just the score.</b> A homepage table showed Village bought in 0% of games, which
+    could have been a bug. Tests now check every card's +Cards/+Actions/+Buys/+$ and that a player is really asked
+    again after a Village or Market (<code>tests/test_vanilla.py</code>); the trained net uses a second buy as often as
+    the GA genome. Not a bug: a strategy choice.</li>
+  <li><b>More exploration noise did not change the style.</b> Neither a higher learning rate (1e-3) nor a four times
+    larger entropy bonus moved the goal check or the actions per turn within 50 iterations.</li>
   <li><b>A teacher is not needed to get off the ground.</b> rl-v1's lessons said that starting RL from a random network
     "would have spent hours relearning what the genome already knew". The first (aborted) start of this run showed the
     opposite for the basics: from random weights, self-play alone went from 0% to 45% against Big Money and 20% against
