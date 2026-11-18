@@ -35,3 +35,26 @@
   Ranked by how often it builds the pair, weighted by the lift.</p>
   <div class="tablewrap"><table class="t fav"><tr><th>Pair</th><th>Together</th><th>Lift</th><th>Copies</th><th>Score</th><th>Games</th></tr>${rowsCombo}</table></div>`;
 })();
+
+// How it uses its turns (+Actions, +Cards, +Buys), next to the GA genome and rl-v1.
+(async function () {
+  const el = document.getElementById('turnuse');
+  if (!el) return;
+  let d;
+  try { d = await (await fetch('data/favorites.json', {cache: 'no-store'})).json(); } catch (e) { return; }
+  if (!d.turns) { el.textContent = 'Not measured yet.'; return; }
+  const who = Object.keys(d.turns);
+  const rows = [['Actions played per turn', 'actions per turn', (x) => x.toFixed(2)],
+                ['Turns with 2 or more actions (needs +Actions)', 'turns with 2+ actions', (x) => Math.round(100 * x) + '%'],
+                ['Cards drawn by its actions, per turn (+Cards)', 'cards drawn by actions per turn', (x) => x.toFixed(2)],
+                ['Turns in which it played a +Buy card', 'turns with a +Buy card played', (x) => Math.round(100 * x) + '%'],
+                ['… and used the extra buy (bought 2+ cards)', '... of those, bought 2+ cards', (x) => Math.round(100 * x) + '%']];
+  const head = '<tr><th></th>' + who.map((w) => `<th>${w === 'this net' ? 'rl-v2 (iteration ' + d.iter + ')' : w}</th>`).join('') + '</tr>';
+  const body = rows.map(([label, key, f]) => `<tr><td>${label}</td>` + who.map((w) => `<td>${f(d.turns[w][key])}</td>`).join('') + '</tr>').join('');
+  const most = who.map((w) => `<tr><td>${w === 'this net' ? 'rl-v2' : w}</td><td>${d.turns[w]['most played'].slice(0, 6).map((p) => p[0]).join(', ')}</td></tr>`).join('');
+  el.innerHTML = `<p class="muted small">${d.turns[who[0]].turns.toLocaleString()} turns each, on the same 300 games against the GA base genome
+  (150 kingdoms that have Village, Festival, Market, Laboratory or Council Room). A strategy that chains actions ("an engine") plays
+  2+ actions in many turns and draws many cards; a money strategy plays about one terminal action per turn.</p>
+  <div class="tablewrap"><table class="t fav">${head}${body}</table></div>
+  <h3>Actions it plays most</h3><div class="tablewrap"><table class="t fav">${most}</table></div>`;
+})();

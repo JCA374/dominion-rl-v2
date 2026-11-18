@@ -397,9 +397,38 @@ def favorites(data_dir, games=300):
         openings[r["opening"]] = openings.get(r["opening"], 0) + 1
     op = sorted(openings.items(), key=lambda kv: -kv[1])[:8]
     it = int(nets[-1].split("_")[-1][:-4])
+    turns = None
+    try:
+        turns = turn_usage_table(W)
+    except Exception as ex:
+        print("turn usage failed:", ex)
     json.dump({"net": nets[-1], "iter": it, "games": len(rows), "score": score, "cards": cards, "base": base,
                "combos": combos[:12], "openings": [{"opening": o, "share": n / len(rows)} for o, n in op],
-               "turns": None}, open(out_p, "w"), separators=(",", ":"))
+               "turns": turns}, open(out_p, "w"), separators=(",", ":"))
+
+
+def turn_usage_table(W, n_kingdoms=150):
+    """How it uses +Actions, +Cards and +Buys per turn (experiments/turn_usage.py), next to the GA genome and rl-v1
+    on the same games (those two are cached: they never change)."""
+    import random
+    spec = importlib.util.spec_from_file_location("turn_usage", os.path.join(ROOT, "experiments", "turn_usage.py"))
+    tu = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tu)
+    rng = random.Random("rl-v2 turn usage site")
+    want = {"Village", "Festival", "Market", "Laboratory", "Council Room"}
+    games = []
+    while len(games) < 2 * n_kingdoms:
+        k = core.random_kingdom(rng)
+        if want & set(k):
+            sd = rng.getrandbits(32)
+            games += [(k, sd, 0), (k, sd, 1)]
+    cache_p = os.path.join(ROOT, "runs", RUN, "turn_usage_ref.json")
+    ref = json.load(open(cache_p)) if os.path.exists(cache_p) else {}
+    if "GA genome" not in ref:
+        ref = {"GA genome": tu.usage(None, games),
+               "rl-v1": tu.usage(np.load(os.path.join(ROOT, "opponents", "rl_r2_2200.npy")), games)}
+        json.dump(ref, open(cache_p, "w"))
+    return {"this net": tu.usage(W, games), **ref}
 
 
 def extra(data_dir):
