@@ -1,0 +1,22 @@
+{
+ "t": "2026-11-18 16:56:18",
+ "label": "z1ent iteration 850",
+ "note": "",
+ "policy": "runs/z1ent/net_850.npy",
+ "n": 1000,
+ "score": 0.7075,
+ "ci": [
+  0.6786,
+  0.7349
+ ],
+ "big_money": 0.85,
+ "smithy_bm": 0.7325,
+ "witch_bm": 0.7025,
+ "secs": 4,
+ "vs_rl": 0.34,
+ "vs_rl_ci": [
+  0.3113,
+  0.3699
+ ],
+ "vs_rl_n": 1000
+}
