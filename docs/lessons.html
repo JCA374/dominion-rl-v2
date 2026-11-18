@@ -11,6 +11,19 @@
 <h1>Lessons</h1>
 <p class="lede">What this project and earlier ones taught. Newest first.</p>
 <div class="box"><h3>From this project</h3><ul id="new">
+  <li><b>Give the network the arithmetic.</b> 115 helper inputs (the next hand's expected coins and odds of $5/$6/$8,
+    expected +Actions/+Buys, expected VP gain, and what one more copy of each card would change) were added to a
+    network that had been flat for 400 iterations. Within 30 iterations it went from 36–38% to 40–41% head to head
+    against rl-v1 and from 55% to 60% against az-v1, and set its best score against the GA base (74.0%). The network
+    had all the raw counts before; computing hypergeometric odds from them was apparently too much to learn.</li>
+  <li><b>Add inputs without starting over.</b> New inputs with zero weights (and Adam's state padded the same way)
+    leave the network's play exactly as it was (checked on 20 games); training then decides what they are for.</li>
+  <li><b>A crash in a worker hangs the whole pool.</b> A table sized for 5 cards overflowed when a hand held 6 (after
+    the opponent's Council Room); the C code died with "stack smashing" and Python's process pool waited forever.
+    With three runs and a full swap it first looked like a memory problem. Stress-test new C code on thousands of
+    random games before training on it.</li>
+  <li><b>More exploration did not avoid the money style.</b> A second run from zero (z2) with five times the entropy
+    bonus early and the kingdom curriculum played exactly like z1 at iterations 100 and 150.</li>
   <li><b>Self-play from zero finds a style early and then keeps it.</b> By iteration 250 (about 40 minutes) it played
     money plus attacks: Witch, Militia, Bandit, Gardens, about 0.5 actions per turn. 600 iterations later it still
     did, while rl-v1, which started from the GA genome's equally plain style, slowly turned into an engine player
