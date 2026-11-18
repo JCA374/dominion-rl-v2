@@ -1,0 +1,22 @@
+{
+ "t": "2026-11-18 15:41:19",
+ "label": "z1lr iteration 750",
+ "note": "",
+ "policy": "runs/z1lr/net_750.npy",
+ "n": 1000,
+ "score": 0.706,
+ "ci": [
+  0.677,
+  0.7334
+ ],
+ "big_money": 0.8825,
+ "smithy_bm": 0.7225,
+ "witch_bm": 0.7075,
+ "secs": 4,
+ "vs_rl": 0.358,
+ "vs_rl_ci": [
+  0.3289,
+  0.3882
+ ],
+ "vs_rl_n": 1000
+}
