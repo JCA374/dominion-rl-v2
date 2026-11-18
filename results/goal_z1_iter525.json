@@ -1,0 +1,16 @@
+{
+ "t": "2026-11-18 14:30:54",
+ "label": "z1 iteration 525",
+ "note": "",
+ "policy": "runs/z1/net_525.npy",
+ "n": 1000,
+ "score": 0.682,
+ "ci": [
+  0.6525,
+  0.7101
+ ],
+ "big_money": 0.8475,
+ "smithy_bm": 0.7725,
+ "witch_bm": 0.715,
+ "secs": 1
+}
