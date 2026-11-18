@@ -34,6 +34,8 @@ CFG = {
     "bc_games": 0,           # 0: start from a random network (rl-v1 imitated 20,000 GA games here)
     "bc_epochs": 6,
     "games": 3000,           # PPO games per iteration
+    "focus_share": 0.0,      # share of training games on kingdoms without the focus_exclude cards (kingdom curriculum)
+    "focus_exclude": "Witch,Militia,Bandit,Bureaucrat,Gardens",
     "snapshot_every": 10,
     "snapshots": 8,
     "temp": 1.0,
@@ -319,7 +321,12 @@ def main():
                 u -= share
             if opp is None or (opp["kind"] == "net" and opp["path"] is None):
                 opp = {"kind": "net", "path": learner, "tag": "self"}
-            k = kingdom_for_bot(rng, opp["name"]) if opp["kind"] == "bot" else random_kingdom(rng)
+            if opp["kind"] == "bot":
+                k = kingdom_for_bot(rng, opp["name"])
+            elif rng.random() < cfg["focus_share"]:
+                k = focus_kingdom(rng, cfg["focus_exclude"].split(","))
+            else:
+                k = random_kingdom(rng)
             games.append({"kingdom": k, "seed": rng.getrandbits(32), "seat": seat, "opp": opp})
         jobs = [{"games": c, "learner": learner, "nh": cfg["nh"], "temp": cfg["temp"], "lam": cfg["lam"]}
                 for c in chunks(games, cfg["chunk"])]
@@ -406,6 +413,13 @@ def write_curriculum(d):
     json.dump({"note": "PPO from a random network, no imitation. The evaluation games (GA base, bots) are only "
                        "measured, never trained on, until a stage adds those opponents.", "stages": stages},
               open(os.path.join(d, "curriculum.json"), "w"), indent=1)
+
+
+def focus_kingdom(rng, exclude):
+    """10 kingdom cards drawn from those not in `exclude`: a kingdom where the excluded strategies are impossible."""
+    import rl.core  # noqa: F401  (puts the engine on the path)
+    from dominion_engine.cards import KINGDOM_CARDS
+    return sorted(rng.sample([c for c in KINGDOM_CARDS if c not in exclude], 10))
 
 
 def pick_opponent(kind, i, rng, snaps):
