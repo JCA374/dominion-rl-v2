@@ -1,0 +1,22 @@
+{
+ "t": "2026-11-18 20:53:37",
+ "label": "z3 iteration 175",
+ "note": "",
+ "policy": "runs/z3/net_175.npy",
+ "n": 1000,
+ "score": 0.6415,
+ "ci": [
+  0.6113,
+  0.6706
+ ],
+ "big_money": 0.87,
+ "smithy_bm": 0.74,
+ "witch_bm": 0.6575,
+ "secs": 6,
+ "vs_rl": 0.294,
+ "vs_rl_ci": [
+  0.2666,
+  0.323
+ ],
+ "vs_rl_n": 1000
+}
