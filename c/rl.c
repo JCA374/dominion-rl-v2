@@ -35,23 +35,27 @@ static double choose(int n, int k) {
     return r;
 }
 
-/* distribution of the coins of k cards drawn from `cnt` (counts per card id), added into P[0..15] scaled by w */
+/* distribution of the coins of k cards drawn from `cnt` (counts per card id) into P[0..HS-1]. k can exceed 5: during
+ * the opponent's turn the next hand is the current hand, which may hold more (Council Room, Library). */
+#define HK 16                                 /* most cards drawn */
+#define HS (3 * HK + 1)                       /* coin sums 0..48 */
 static void draw_dist(const int *cnt, int k, double *P) {
+    if (k > HK - 1) k = HK - 1;
     int nv[4] = {0}, n = 0;
     for (int c = 0; c < DE_NUM_CARDS; c++) { nv[DE_CARDS[c].coins] += cnt[c]; n += cnt[c]; }
-    double f[6][16] = {{0}};
+    double f[HK][HS] = {{0}};
     f[0][0] = 1;
     for (int v = 0; v < 4; v++) {
-        double g[6][16] = {{0}};
+        double g[HK][HS] = {{0}};
         for (int j = 0; j <= k; j++)
-            for (int s = 0; s < 16; s++) {
+            for (int s = 0; s < HS; s++) {
                 if (f[j][s] == 0) continue;
                 for (int t = 0; t <= nv[v] && j + t <= k; t++) g[j + t][s + v * t] += f[j][s] * choose(nv[v], t);
             }
         memcpy(f, g, sizeof f);
     }
     double tot = choose(n, k);
-    for (int s = 0; s < 16; s++) P[s] = tot > 0 ? f[k][s] / tot : (s == 0);
+    for (int s = 0; s < HS; s++) P[s] = tot > 0 ? f[k][s] / tot : (s == 0);
 }
 
 static void rl_helpers(const de_game *g, int me, float *h) {
@@ -70,13 +74,13 @@ static void rl_helpers(const de_game *g, int me, float *h) {
         nd = p->deck_n; np = p->discard_n + p->hand_n + p->play_n;
         a = nd < 5 ? nd : 5; b = 5 - a < np ? 5 - a : np;
     }
-    double Pa[16], Pb[16], P[16] = {0};
+    double Pa[HS], Pb[HS], P[HS] = {0};
     draw_dist(deck, a, Pa);
     draw_dist(pool, b, Pb);
-    for (int i = 0; i < 16; i++) for (int j = 0; i + j < 16; j++) P[i + j] += Pa[i] * Pb[j];
+    for (int i = 0; i < HS; i++) for (int j = 0; i + j < HS; j++) P[i + j] += Pa[i] * Pb[j];
     double ec = 0, p3 = 0, p5 = 0, p6 = 0, p8 = 0, evp = 0;
     int prov = g->supply[DE_PROVINCE] > 0, duchy = g->supply[DE_DUCHY] > 0, est = g->supply[DE_ESTATE] > 0;
-    for (int s = 0; s < 16; s++) {
+    for (int s = 0; s < HS; s++) {
         ec += s * P[s];
         if (s >= 3) p3 += P[s];
         if (s >= 5) p5 += P[s];

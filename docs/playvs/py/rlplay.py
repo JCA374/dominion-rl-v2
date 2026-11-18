@@ -40,18 +40,23 @@ def _choose(n, k):
     return r
 
 
+HK = 16                     # c/rl.c: most cards drawn, and coin sums 0..HS-1
+HS = 3 * HK + 1
+
+
 def _draw_dist(cnt, k):
     """Distribution of the coins of k cards drawn from counts `cnt` (c/rl.c draw_dist, same order of operations)."""
+    k = min(k, HK - 1)
     nv, n = [0, 0, 0, 0], 0
     for c in range(N):
         nv[CARDS[c].coins] += cnt[c]
         n += cnt[c]
-    f = [[0.0] * 16 for _ in range(6)]
+    f = [[0.0] * HS for _ in range(HK)]
     f[0][0] = 1.0
     for v in range(4):
-        g = [[0.0] * 16 for _ in range(6)]
+        g = [[0.0] * HS for _ in range(HK)]
         for j in range(k + 1):
-            for s in range(16):
+            for s in range(HS):
                 if f[j][s] == 0:
                     continue
                 t = 0
@@ -60,7 +65,7 @@ def _draw_dist(cnt, k):
                     t += 1
         f = g
     tot = _choose(n, k)
-    return [f[k][s] / tot if tot > 0 else float(s == 0) for s in range(16)]
+    return [f[k][s] / tot if tot > 0 else float(s == 0) for s in range(HS)]
 
 
 def helpers(g, me):
@@ -85,13 +90,13 @@ def helpers(g, me):
         a = min(nd, 5)
         b = min(5 - a, np_)
     Pa, Pb = _draw_dist(deck, a), _draw_dist(pool, b)
-    P = [0.0] * 16
-    for i in range(16):
-        for j in range(16 - i):
+    P = [0.0] * HS
+    for i in range(HS):
+        for j in range(HS - i):
             P[i + j] += Pa[i] * Pb[j]
     ec = p3 = p5 = p6 = p8 = evp = 0.0
     prov, duchy, est = g.supply[PROVINCE] > 0, g.supply[DUCHY] > 0, g.supply[ESTATE] > 0
-    for s in range(16):
+    for s in range(HS):
         ec += s * P[s]
         if s >= 3:
             p3 += P[s]
@@ -137,7 +142,7 @@ def helpers(g, me):
     return h
 
 
-def features(g, me: int, kind: int, subject: int) -> np.ndarray:
+def features(g, me: int, kind: int, subject: int, helpers_too: bool = True) -> np.ndarray:
     p, o = g.players[me], g.players[1 - me]
     x = np.zeros(NF, np.float32)
     sup = np.array(g.supply, np.float32)
@@ -168,7 +173,8 @@ def features(g, me: int, kind: int, subject: int) -> np.ndarray:
     x[f + 2 * N + 2 + kind] = 1
     if 0 <= subject < N:
         x[f + 2 * N + 2 + NUM_KINDS + subject] = 1
-    x[NF0:] = helpers(g, me)
+    if helpers_too:
+        x[NF0:] = helpers(g, me)
     return x
 
 
@@ -216,7 +222,7 @@ class NetAgent:
         opts = list(d.options) + ([PASS] if d.may_pass else [])
         if len(opts) == 1:
             return d.options[0] if d.options else -1
-        lg, v = self.net.forward(features(game, d.player, d.kind, d.subject))
+        lg, v = self.net.forward(features(game, d.player, d.kind, d.subject, self.net.nf > NF0))
         legal = np.array(opts)
         z = lg[legal] - lg[legal].max()
         pr = np.exp(z) / np.exp(z).sum()

@@ -96,3 +96,24 @@ def test_online_game_smithy_draws_three_and_logs_them():
         if seen >= 8:
             break
     assert seen >= 8
+
+
+def test_helpers_with_a_big_hand_off_turn():
+    """Off turn the next hand is the current hand, which can hold more than 5 cards (it once overflowed C's tables).
+    Council Room / Library kingdoms, many games: C must not crash, and Python must agree."""
+    from rl.core import NET
+    from rl.net import Net
+    rng = random.Random(21)
+    W = Net(32).flat()
+    k = ["Council Room", "Library", "Smithy", "Village", "Laboratory", "Market", "Festival", "Militia", "Moat", "Cellar"]
+    g = base_genome(k)["ints"]
+    for i in range(60):
+        r = play([Seat(NET, g, W, sample=True, record=True), Seat(NET, g, W, sample=True, record=True)], k, 3000 + i,
+                 rng_seed=rng.getrandbits(32))
+        assert not r["error"]
+    r = play([Seat(GA, g, record=True), Seat(GA, g, record=True)], k, 4242, rng_seed=7)
+
+    def check(j, game, d, rlplay):
+        x = rlplay.features(game, d.player, d.kind, d.subject)
+        assert np.allclose(x, r["rec"]["X"][j], atol=1e-6)
+    _replay(k, 4242, r["rec"], check)
