@@ -228,6 +228,7 @@ def main():
     ap.add_argument("--run", default="r1")
     ap.add_argument("--continue", dest="cont", action="store_true")
     ap.add_argument("--init_from", default=None)
+    ap.add_argument("--stage", type=int, default=0, help="with --init_from: the stage to start in (0-based)")
     ap.add_argument("--set", nargs="*", default=[])
     args = ap.parse_args()
     import torch
@@ -293,8 +294,8 @@ def main():
         log.event("init_eval", eval=fmt(e))
         log.row(make_row(0, t0, {}, {}, e))
         it, snaps = 1, [snap(0)]
-        stage, stage_start = 0, 1
-        log.event("stage_start", stage=STAGES[0]["name"], index=0, iter=1, expect=STAGES[0].get("expect", ""))
+        stage, stage_start = args.stage, 1
+        log.event("stage_start", stage=STAGES[stage]["name"], index=stage, iter=1, expect=STAGES[stage].get("expect", ""))
         torch.save({"net": net.state_dict(), "opt": opt.state_dict(), "iter": 0, "snaps": snaps,
                     "stage": stage, "stage_start": stage_start}, os.path.join(d, "ckpt.pt"))
 

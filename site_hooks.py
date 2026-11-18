@@ -331,7 +331,82 @@ def feature_names():
     return names
 
 
+BASE_SHOW = ["Province", "Gold", "Silver", "Duchy", "Estate", "Copper", "Curse"]
+
+
+def favorites(data_dir, games=300):
+    """What the newest net buys right now, from real games: it (argmax) against the GA base genome on `games` fresh
+    kingdoms, both seats. Per kingdom card: how often it buys one when the card is on the table, and its score then;
+    the pairs it builds together most; its openings. Written to data/favorites.json, redrawn when the net changes."""
+    import itertools
+    import random
+    nets = [p for p in _nets() if int(p.split("_")[-1][:-4]) % EVERY == 0]
+    if not nets:
+        return
+    src = os.path.join(ROOT, nets[-1])
+    out_p = os.path.join(data_dir, "favorites.json")
+    if cached(out_p, src) and json.load(open(out_p)).get("net") == nets[-1]:
+        return
+    W = np.load(src)
+    rng = random.Random("rl-v2 favorites")
+    buy = core.KINDS.index("buy")
+    rows = []
+    for _ in range(games):
+        k, seed = core.random_kingdom(rng), rng.getrandbits(32)
+        g = core.base_genome(k)["ints"]
+        for seat in (0, 1):
+            me = core.Seat(core.NET, g, W, record=True)
+            seats = [me, core.Seat(core.GA, g)] if seat == 0 else [core.Seat(core.GA, g), me]
+            r = core.play(seats, k, seed, rng_seed=seed ^ 0xFA7)
+            rec = r["rec"]
+            m = (rec["KIND"] == buy) & (rec["A"] != core.PASS)
+            bought = [NAME[int(a)] for a in rec["A"][m]]
+            turns = rec["TURN"][m]
+            opening = sorted(NAME[int(a)] for a, t in zip(rec["A"][m], turns) if t <= 2)
+            rows.append({"kingdom": list(k), "bought": bought, "points": (core.outcome(r, seat) + 1) / 2,
+                         "opening": " / ".join(opening) if opening else "nothing"})
+    score = float(np.mean([r["points"] for r in rows]))
+    cards = []
+    for c in sorted({c for r in rows for c in r["kingdom"]}):
+        on = [r for r in rows if c in r["kingdom"]]
+        took = [r for r in on if c in r["bought"]]
+        left = [r for r in on if c not in r["bought"]]
+        cards.append({"card": c, "games": len(on), "take": len(took) / len(on),
+                      "copies": float(np.mean([r["bought"].count(c) for r in took])) if took else 0.0,
+                      "score_took": float(np.mean([r["points"] for r in took])) if took else None,
+                      "score_left": float(np.mean([r["points"] for r in left])) if left else None})
+    cards.sort(key=lambda x: -x["take"])
+    take = {x["card"]: x["take"] for x in cards}
+    base = [{"card": c, "per_game": float(np.mean([r["bought"].count(c) for r in rows]))} for c in BASE_SHOW]
+    combos = []
+    for a, b in itertools.combinations(sorted(take), 2):
+        on = [r for r in rows if a in r["kingdom"] and b in r["kingdom"]]
+        if len(on) < 16:
+            continue
+        both = [r for r in on if a in r["bought"] and b in r["bought"]]
+        if len(both) < 6:
+            continue
+        p = len(both) / len(on)
+        combos.append({"cards": [a, b], "games": len(on), "both": p, "lift": p / max(1e-9, take[a] * take[b]),
+                       "score": float(np.mean([r["points"] for r in both])),
+                       "copies": [float(np.mean([r["bought"].count(a) for r in both])),
+                                  float(np.mean([r["bought"].count(b) for r in both]))]})
+    combos.sort(key=lambda x: -(x["both"] * min(x["lift"], 3)))
+    openings = {}
+    for r in rows:
+        openings[r["opening"]] = openings.get(r["opening"], 0) + 1
+    op = sorted(openings.items(), key=lambda kv: -kv[1])[:8]
+    it = int(nets[-1].split("_")[-1][:-4])
+    json.dump({"net": nets[-1], "iter": it, "games": len(rows), "score": score, "cards": cards, "base": base,
+               "combos": combos[:12], "openings": [{"opening": o, "share": n / len(rows)} for o, n in op],
+               "turns": None}, open(out_p, "w"), separators=(",", ":"))
+
+
 def extra(data_dir):
+    try:
+        favorites(data_dir)
+    except Exception as ex:                       # never stops the publisher
+        print("favorites failed:", ex)
     out = {}
     for p in sorted(glob.glob(os.path.join(ROOT, "results", "*.json"))):
         out[os.path.basename(p)[:-5]] = json.load(open(p))
