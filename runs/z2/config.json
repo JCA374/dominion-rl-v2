@@ -1,5 +1,6 @@
 {
  "nh": 256,
+ "nf": 0,
  "bc_games": 0,
  "bc_epochs": 6,
  "games": 2000,
