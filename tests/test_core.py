@@ -22,19 +22,21 @@ def test_engine_pins_agree():
 
 
 def test_forward_matches_c():
-    torch.manual_seed(0)
-    net = Net(64)
-    for p in net.parameters():
-        torch.nn.init.normal_(p, 0, 0.3)
-    flat = net.flat()
-    x = np.random.default_rng(0).normal(size=NF).astype(np.float32)
-    lg = np.zeros(NA, np.float32)
-    v = lib.rl_forward(flat.ctypes.data_as(__import__("ctypes").POINTER(__import__("ctypes").c_float)), 64,
-                       x.ctypes.data_as(__import__("ctypes").POINTER(__import__("ctypes").c_float)),
-                       lg.ctypes.data_as(__import__("ctypes").POINTER(__import__("ctypes").c_float)))
-    tl, tv = net(torch.from_numpy(x)[None])
-    assert np.allclose(lg, tl[0].detach().numpy(), atol=1e-4)
-    assert abs(v - float(tv[0])) < 1e-4
+    import ctypes
+    from rl.core import NF0
+    P = ctypes.POINTER(ctypes.c_float)
+    for nf in (NF, NF0):
+        torch.manual_seed(0)
+        net = Net(64, nf)
+        for p in net.parameters():
+            torch.nn.init.normal_(p, 0, 0.3)
+        flat = net.flat()
+        x = np.random.default_rng(0).normal(size=NF).astype(np.float32)
+        lg = np.zeros(NA, np.float32)
+        v = lib.rl_forward(flat.ctypes.data_as(P), 64, nf, x.ctypes.data_as(P), lg.ctypes.data_as(P))
+        tl, tv = net(torch.from_numpy(x)[None])
+        assert np.allclose(lg, tl[0].detach().numpy(), atol=1e-4)
+        assert abs(v - float(tv[0])) < 1e-4
 
 
 def test_ga_seats_replay_az_v1_games():

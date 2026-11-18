@@ -31,6 +31,7 @@ import numpy as np
 
 CFG = {
     "nh": 256,
+    "nf": 0,                 # inputs the net reads: 0 = all (with the helper inputs), 298 = rl-v1's only
     "bc_games": 0,           # 0: start from a random network (rl-v1 imitated 20,000 GA games here)
     "bc_epochs": 6,
     "games": 3000,           # PPO games per iteration
@@ -45,7 +46,9 @@ CFG = {
     "batch": 4096,
     "lr": 3e-4,
     "vf": 0.5,               # value loss weight
-    "ent": 0.01,             # entropy bonus
+    "ent": 0.01,             # entropy bonus (after the schedule below)
+    "ent_start": 0.0,        # >0: the entropy bonus starts here and falls linearly to ent over ent_iters iterations
+    "ent_iters": 600,
     "max_kl": 0.03,          # stop the epoch loop early above this approximate KL
     "eval_kingdoms": 100,    # vs GA base: x 2 seeds x 2 seats = 400 games; bots: 25 x 2 x 2 x 3 = 300
     "workers": max(1, os.cpu_count() - 1),
@@ -139,8 +142,12 @@ class Log:
     def row(self, row):
         path = os.path.join(self.d, "stats.csv")
         new = not os.path.exists(path)
+        fields = list(row)
+        if not new:                                  # a resumed run keeps its file's columns (new ones are dropped)
+            with open(path) as f:
+                fields = next(csv.reader(f))
         with open(path, "a", newline="") as f:
-            w = csv.DictWriter(f, fieldnames=list(row))
+            w = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
             if new:
                 w.writeheader()
             w.writerow(row)
@@ -172,7 +179,7 @@ def ppo_update(net, opt, data, cfg, torch):
             p = logp_all.exp()
             ent = -(p * torch.where(L[j], logp_all, torch.zeros_like(logp_all))).sum(-1).mean()
             vl = ((v - RET[j]) ** 2).mean()
-            loss = pg + cfg["vf"] * vl - cfg["ent"] * ent
+            loss = pg + cfg["vf"] * vl - cfg["ent_now"] * ent
             opt.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(net.parameters(), 1.0)
@@ -236,6 +243,7 @@ def main():
     import torch
     torch.set_num_threads(4)
     from rl.core import kingdom_for_bot, random_kingdom
+    from rl.core import NF
     from rl.net import Net, load, save
 
     d = os.path.join("runs", args.run)
@@ -257,7 +265,7 @@ def main():
 
     if args.cont:
         ck = torch.load(os.path.join(d, "ckpt.pt"), weights_only=False)
-        net = Net(cfg["nh"])
+        net = Net(cfg["nh"], ck["net"]["l1.weight"].shape[1])
         net.load_state_dict(ck["net"])
         opt = torch.optim.Adam(net.parameters(), lr=cfg["lr"])
         opt.load_state_dict(ck["opt"])
@@ -272,9 +280,9 @@ def main():
             net = load(args.init_from)
         elif not cfg["bc_games"]:
             torch.manual_seed(0)
-            net = Net(cfg["nh"])
+            net = Net(cfg["nh"], cfg["nf"] or NF)
         else:
-            net = Net(cfg["nh"])
+            net = Net(cfg["nh"], cfg["nf"] or NF)
             rng = random.Random("rl-v2 bc")
             games = []
             for i in range(cfg["bc_games"]):
@@ -345,7 +353,9 @@ def main():
               "t_play": t_play}
         tt = time.time()
         net.train()
+        cfg["ent_now"] = entropy_bonus(cfg, it)
         m = ppo_update(net, opt, data, cfg, torch)
+        m["ent_coef"] = cfg["ent_now"]
         sp["t_train"] = time.time() - tt
         save(net, os.path.join(d, f"net_{it}.pt"))
         e = run_eval(pool, cfg, {"kind": "net", "path": snap(it)})
@@ -415,6 +425,14 @@ def write_curriculum(d):
               open(os.path.join(d, "curriculum.json"), "w"), indent=1)
 
 
+def entropy_bonus(cfg, it):
+    """The entropy coefficient at iteration `it`: ent_start falling linearly to ent over ent_iters (or ent)."""
+    if cfg["ent_start"] <= 0:
+        return cfg["ent"]
+    f = max(0.0, 1 - it / cfg["ent_iters"])
+    return cfg["ent"] + (cfg["ent_start"] - cfg["ent"]) * f
+
+
 def focus_kingdom(rng, exclude):
     """10 kingdom cards drawn from those not in `exclude`: a kingdom where the excluded strategies are impossible."""
     import rl.core  # noqa: F401  (puts the engine on the path)
@@ -442,7 +460,7 @@ def pick_opponent(kind, i, rng, snaps):
 
 def make_row(it, t0, m, sp, e):
     row = {"iter": it, "hours": round((time.time() - t0) / 3600, 4)}
-    for k in ("pg_loss", "value_loss", "entropy", "kl", "clipfrac", "epochs_done"):
+    for k in ("pg_loss", "value_loss", "entropy", "kl", "clipfrac", "epochs_done", "ent_coef"):
         row[k] = round(m[k], 5) if k in m else ""
     for tag in ["GA base"] + BOTS + ["bots"]:
         row[f"eval_{tag.replace(' ', '_').replace('-', '_')}"] = round(e[tag], 4)

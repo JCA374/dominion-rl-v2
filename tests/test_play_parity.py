@@ -46,7 +46,9 @@ def test_features_equal_c():
 
         def check(j, game, d, rlplay):
             x = rlplay.features(game, d.player, d.kind, d.subject)
-            assert np.array_equal(x, rec["X"][j]), (j, d, np.nonzero(x != rec["X"][j]))
+            n0 = rlplay.NF0                       # rl-v1's inputs: bit-exact; the helper inputs (double maths): 1e-6
+            assert np.array_equal(x[:n0], rec["X"][j][:n0]), (j, d, np.nonzero(x[:n0] != rec["X"][j][:n0]))
+            assert np.allclose(x[n0:], rec["X"][j][n0:], atol=1e-6), (j, d, np.nonzero(~np.isclose(x[n0:], rec["X"][j][n0:], atol=1e-6)))
         _replay(k, 1000 + i, rec, check)
 
 

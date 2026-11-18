@@ -42,16 +42,17 @@ def build() -> str:
 
 
 lib = ctypes.CDLL(build())
-NF = lib.rl_num_features()
+NF = lib.rl_num_features()              # 413: rl-v1's 298 inputs + the helper inputs (rl_helpers in c/rl.c)
+NF0 = lib.rl_num_features_base()         # 298: what a net without the helper inputs reads
 NA = lib.rl_num_actions()
 PASS = NA - 1
 _I, _F = ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_float)
 _U8 = ctypes.POINTER(ctypes.c_ubyte)
-lib.rl_num_params.argtypes = [ctypes.c_int]
+lib.rl_num_params.argtypes = [ctypes.c_int, ctypes.c_int]
 lib.rl_forward.restype = ctypes.c_float
-lib.rl_forward.argtypes = [_F, ctypes.c_int, _F, _F]
+lib.rl_forward.argtypes = [_F, ctypes.c_int, ctypes.c_int, _F, _F]
 lib.rl_play.restype = ctypes.c_int
-lib.rl_play.argtypes = [_I, _F, _F, _I, _I, _I, _I, _I, ctypes.c_float, _I, ctypes.c_float,
+lib.rl_play.argtypes = [_I, _F, _F, _I, _I, _I, _I, _I, _I, ctypes.c_float, _I, ctypes.c_float,
                         _I, ctypes.c_int, ctypes.c_uint64, ctypes.c_uint64,
                         _F, _U8, _I, _F, _F, _I, _I, _I, ctypes.c_int, _I]
 lib.az_set_prior.argtypes = [ctypes.c_float, ctypes.c_float]
@@ -84,12 +85,19 @@ class Seat:
         self.sims, self.sample, self.record = sims, sample, record
 
 
+def net_shape(params) -> tuple[int, int]:
+    """(hidden size, inputs read) of a flat RL net: solves nh^2 + (nf + NA + 4) nh + NA + 1 = size for nf in
+    (NF, NF0)."""
+    for nf in (NF, NF0):
+        b = nf + NA + 4
+        nh = int(round((-b + (b * b + 4 * (params.size - NA - 1)) ** 0.5) / 2))
+        if nh > 0 and lib.rl_num_params(nh, nf) == params.size:
+            return nh, nf
+    raise ValueError(f"not an RL net: {params.size} parameters")
+
+
 def nh_of(params) -> int:
-    """Hidden size of a flat RL net: solves rl_num_params(nh) = nh^2 + (NF + NA + 4) nh + NA + 1."""
-    b = NF + NA + 4
-    nh = int(round((-b + (b * b + 4 * (params.size - NA - 1)) ** 0.5) / 2))
-    assert lib.rl_num_params(nh) == params.size, params.size
-    return nh
+    return net_shape(params)[0]
 
 
 def play(seats, kingdom, seed, rng_seed=1, nh=256, temp=1.0, az_lam=0.5, trace=False) -> dict:
@@ -109,8 +117,9 @@ def play(seats, kingdom, seed, rng_seed=1, nh=256, temp=1.0, az_lam=0.5, trace=F
     p = [s.params for s in seats]
     for s in seats:
         assert s.params is None or s.params.dtype == np.float32
-    nhs = [nh_of(s.params) if s.mode == NET and s.params is not None else nh for s in seats]
-    n = lib.rl_play(_ints([s.mode for s in seats]), _fptr(p[0]), _fptr(p[1]), _ints(nhs),
+    shapes = [net_shape(s.params) if s.mode == NET and s.params is not None else (nh, NF) for s in seats]
+    n = lib.rl_play(_ints([s.mode for s in seats]), _fptr(p[0]), _fptr(p[1]), _ints([a for a, _ in shapes]),
+                    _ints([b for _, b in shapes]),
                     seats[0].genome, seats[1].genome, _ints([int(s.sample) for s in seats]),
                     _ints([int(s.record) for s in seats]), temp, _ints([s.sims for s in seats]), az_lam,
                     k, len(kingdom), seed & (2**64 - 1), rng_seed & (2**64 - 1),
