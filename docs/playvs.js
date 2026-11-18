@@ -65,16 +65,21 @@
   }
 
   async function boot(status) {
-    if (py) return;
+    if (py) return;                                   // set only once everything below has worked
     status('Loading Python for the browser…');
-    if (!window.loadPyodide) await new Promise((ok, bad) => { const s = document.createElement('script'); s.src = PYODIDE + 'pyodide.js'; s.onload = ok; s.onerror = bad; document.head.appendChild(s); });
-    py = await window.loadPyodide({indexURL: PYODIDE});
+    if (!window.loadPyodide) await new Promise((ok, bad) => { const s = document.createElement('script'); s.src = PYODIDE + 'pyodide.js'; s.onload = ok; s.onerror = () => bad(new Error('could not load Pyodide')); document.head.appendChild(s); });
+    const p = await window.loadPyodide({indexURL: PYODIDE});
     status('Loading numpy…');
-    await py.loadPackage('numpy');
+    await p.loadPackage('numpy');
     status('Loading the rules engine…');
-    py.FS.mkdirTree('/home/pyodide/py/dominion_engine');
-    for (const f of PY_FILES) py.FS.writeFile('/home/pyodide/py/' + f, await (await fetch('playvs/py/' + f)).text());
-    py.runPython('import sys; sys.path.insert(0, "/home/pyodide/py"); import session');
+    p.FS.mkdirTree('/home/pyodide/py/dominion_engine');
+    for (const f of PY_FILES) {
+      const r = await fetch('playvs/py/' + f, {cache: 'no-store'});
+      if (!r.ok) throw new Error(`could not load playvs/py/${f} (HTTP ${r.status})`);
+      p.FS.writeFile('/home/pyodide/py/' + f, await r.text());
+    }
+    p.runPython('import sys; sys.path.insert(0, "/home/pyodide/py"); import session');
+    py = p;
   }
 
   async function start() {
@@ -93,7 +98,7 @@
         py.FS.writeFile('/home/pyodide/m.npy', new Uint8Array(await (await fetch('playvs/models/' + m.file)).arrayBuffer()));
         flat = '__import__("numpy").load("/home/pyodide/m.npy")';
       }
-      py.runPython(`S = session.Session(session.kingdom_random(${seed}), ${seed}, ${JSON.stringify(m.name)}, ${flat}, human=${seat})`);
+      py.runPython(`import session\nS = session.Session(session.kingdom_random(${seed}), ${seed}, ${JSON.stringify(m.name)}, ${flat}, human=${seat})`);
       S = py.globals.get('S');
       draw(JSON.parse(S.view()));
     } catch (e) { status('Could not start: ' + e); }
