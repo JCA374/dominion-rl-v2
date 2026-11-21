@@ -23,6 +23,14 @@ started by copying the evolved GA genome and now scores 82.8% against it and 71.
   <div class="cards" id="cards"></div>
   <p class="muted small">Numbers come from the run files and update every 15 minutes. Details on the <a href="training.html">Training</a> tab; the stages on <a href="curriculum.html">Curriculum</a>.</p>
 </section>
+<section>
+  <h2>Against the new GA base <span class="muted small">2026-11-21</span></h2>
+  <p class="lede">The GA base got stronger: 17 of its specialists improved with 1,000 more generations, and on each kingdom
+  the eligible specialists now play each other first and the best one plays (instead of the one best against the simple
+  bots). Every model was measured again, against the old and the new base on the same fresh games. Bold rows are this
+  project's models. Other scores on this site (training curves, goal checks) are against the old base.</p>
+  <div id="rescore" data-mine="rl-v2"></div>
+</section>
 
 <section>
   <h2>What it plays right now</h2>
@@ -123,5 +131,6 @@ publish.py, site_hooks.py, site.json, docs/    this site
 <script src="project.js?v=0467ffc4"></script>
 <script src="overview.js?v=cb92b7c0"></script>
 <script src="favorites.js?v=a2adf90b"></script>
+<script src="rescore.js?v=a92e0e84"></script>
 </body>
 </html>
